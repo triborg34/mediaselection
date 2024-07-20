@@ -1,14 +1,15 @@
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:io';
-
 import 'package:mediaselection/controller.dart';
 
-
+/// ImageDisplayScreen is a StatefulWidget that displays an image and allows
+/// users to input a question and multiple answers associated with the image.
 class ImageDisplayScreen extends StatefulWidget {
   final String imagePath;
 
+  /// Constructor for ImageDisplayScreen.
+  /// Takes the path of the image to be displayed.
   ImageDisplayScreen({required this.imagePath});
 
   @override
@@ -23,7 +24,9 @@ class _ImageDisplayScreenState extends State<ImageDisplayScreen> {
   @override
   void initState() {
     super.initState();
+    // Set the image path in the answer controller
     answerController.setImagePath(widget.imagePath);
+    // Initialize question and answers from the controller
     _questionController.text = answerController.question.value;
     for (int i = 0; i < 4; i++) {
       _answerControllers[i].text = answerController.answers[i];
@@ -32,6 +35,7 @@ class _ImageDisplayScreenState extends State<ImageDisplayScreen> {
 
   @override
   void dispose() {
+    // Dispose of the controllers to free up resources
     _questionController.dispose();
     for (var controller in _answerControllers) {
       controller.dispose();
@@ -39,6 +43,7 @@ class _ImageDisplayScreenState extends State<ImageDisplayScreen> {
     super.dispose();
   }
 
+  /// Saves the question and answers to the answer controller.
   void _saveQuestionAndAnswers() {
     answerController.setQuestion(_questionController.text);
     for (int i = 0; i < 4; i++) {
@@ -46,6 +51,7 @@ class _ImageDisplayScreenState extends State<ImageDisplayScreen> {
     }
   }
 
+  /// Displays a dialog for the user to input a question and answers.
   Future<void> _showQuestionDialog() async {
     await showDialog(
       context: context,
@@ -119,6 +125,7 @@ class _ImageDisplayScreenState extends State<ImageDisplayScreen> {
     );
   }
 
+  /// Handles the press event of the floating action button.
   void _handleFloatingActionButtonPress() {
     _showQuestionDialog();
   }
@@ -152,7 +159,6 @@ class _ImageDisplayScreenState extends State<ImageDisplayScreen> {
               aspectRatio: 1,
               child: Image.file(File(widget.imagePath), fit: BoxFit.cover),
             ),
-           
             Positioned(
               bottom: 20,
               right: 20,

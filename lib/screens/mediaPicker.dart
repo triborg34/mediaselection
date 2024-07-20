@@ -1,6 +1,4 @@
 import 'dart:io';
-// ignore: unused_import
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -10,10 +8,12 @@ import 'package:mediaselection/screens/quistion.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:video_player/video_player.dart';
 
+/// GalleryPicker is a StatelessWidget that allows users to pick media (images or videos) from their gallery.
 class GalleryPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final mediaController = Get.put(MediaController());
+    // Initializing MediaController using GetX for state management.
+    final mediaController = Get.find<MediaController>();
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -22,11 +22,11 @@ class GalleryPicker extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () {
-              if(mediaController.isVideo.value){
-              Get.to(VideoPlayerScreen(videoPath: mediaController.pickedFile.value!.path));
-              }else{
+              if (mediaController.isVideo.value) {
+                Get.to(VideoPlayerScreen(videoPath: mediaController.pickedFile.value!.path));
+              } else {
                 Get.to(ImageDisplayScreen(imagePath: mediaController.pickedFile.value!.path));
-          }
+              }
             },
             child: Text(
               'بعدی',
@@ -47,6 +47,7 @@ class GalleryPicker extends StatelessWidget {
   }
 }
 
+/// SelectedMediaDisplay is a StatelessWidget that displays the selected media (image or video).
 class SelectedMediaDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -74,6 +75,7 @@ class SelectedMediaDisplay extends StatelessWidget {
   }
 }
 
+/// MediaGrid is a StatefulWidget that displays a grid of media items (images and videos) from the gallery.
 class MediaGrid extends StatefulWidget {
   @override
   _MediaGridState createState() => _MediaGridState();
@@ -89,6 +91,7 @@ class _MediaGridState extends State<MediaGrid> {
     fetchMedia();
   }
 
+  /// Fetches media items from the gallery based on the selected media type.
   Future<void> fetchMedia() async {
     final PermissionState ps = await PhotoManager.requestPermissionExtend();
     if (ps.isAuth) {
@@ -117,6 +120,7 @@ class _MediaGridState extends State<MediaGrid> {
     }
   }
 
+  /// Updates the media type and fetches media accordingly.
   void onMediaTypeChanged(String newMediaType) {
     setState(() {
       mediaType = newMediaType;
@@ -130,77 +134,79 @@ class _MediaGridState extends State<MediaGrid> {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Padding(
-            padding: EdgeInsets.only(right: 15),
-            child: MediaTypeSelector(onChanged: onMediaTypeChanged)),
+          padding: EdgeInsets.only(right: 15),
+          child: MediaTypeSelector(onChanged: onMediaTypeChanged)),
         Expanded(
-            child: GridView.builder(
-              
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 4,
-            crossAxisSpacing: 4.0,
-            mainAxisSpacing: 4.0,
-          ),
-          itemBuilder: (context, index) {
-            if (index == 0) {
-              return GestureDetector(
-                onTap: () {
-                  _showCameraOptions(context);
+          child: GridView.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              crossAxisSpacing: 4.0,
+              mainAxisSpacing: 4.0,
+            ),
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return GestureDetector(
+                  onTap: () {
+                    _showCameraOptions(context);
+                  },
+                  child: Container(
+                    color: Colors.black26,
+                    child: Icon(Icons.camera_alt, color: Colors.white),
+                  ),
+                );
+              }
+              final asset = mediaList[index - 1];
+              return FutureBuilder<Widget>(
+                future: buildThumbnail(asset, index - 1),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.done) {
+                    return snapshot.data ?? Container();
+                  } else {
+                    return Center(child: CircularProgressIndicator());
+                  }
                 },
-                child: Container(
-                  color: Colors.black26,
-                  child: Icon(Icons.camera_alt, color: Colors.white),
-                ),
               );
-            }
-            final asset = mediaList[index - 1];
-            return FutureBuilder<Widget>(
-              
-              future: buildThumbnail(asset, index - 1),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done) {
-                  return snapshot.data ?? Container();
-                } else {
-                  return Center(child: CircularProgressIndicator());
-                }
-              },
-            );
-          },
-          itemCount: mediaList.length + 1,
-        )),
+            },
+            itemCount: mediaList.length + 1,
+          ),
+        ),
       ],
     );
   }
 
+  /// Builds a thumbnail for the given media asset.
   Future<Widget> buildThumbnail(AssetEntity asset, int index) async {
     final thumbData =
         await asset.thumbnailDataWithSize(ThumbnailSize(200, 200));
 
     return GestureDetector(
-        onTap: () async {
-          final file = await asset.file;
-          if (file != null) {
-            final mediaController = Get.find<MediaController>();
-            mediaController.pickMedia(file.path, asset.mimeType, index);
-          }
-        },
-        child: Obx(
-          () => Get.find<MediaController>().selectedIndex.value == index
-              ? Container(
-                  child: Opacity(
-                    opacity: 0.5,
-                    child: Image.memory(
-                      thumbData!,
-                      fit: BoxFit.cover,
-                    ),
+      onTap: () async {
+        final file = await asset.file;
+        if (file != null) {
+          final mediaController = Get.find<MediaController>();
+          mediaController.pickMedia(file.path, asset.mimeType, index);
+        }
+      },
+      child: Obx(
+        () => Get.find<MediaController>().selectedIndex.value == index
+            ? Container(
+                child: Opacity(
+                  opacity: 0.5,
+                  child: Image.memory(
+                    thumbData!,
+                    fit: BoxFit.cover,
                   ),
-                )
-              : Image.memory(
-                  thumbData!,
-                  fit: BoxFit.cover,
                 ),
-        ));
+              )
+            : Image.memory(
+                thumbData!,
+                fit: BoxFit.cover,
+              ),
+      ),
+    );
   }
 
+  /// Shows options to take a photo or record a video using the camera.
   void _showCameraOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -231,8 +237,10 @@ class _MediaGridState extends State<MediaGrid> {
   }
 }
 
+/// MediaTypeSelector is a StatelessWidget that displays a dropdown menu to select the type of media (images, videos, or all).
 class MediaTypeSelector extends StatelessWidget {
   final Function(String) onChanged;
+
   const MediaTypeSelector({required this.onChanged});
 
   @override
